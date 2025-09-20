@@ -1,61 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Todo App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>Todo List</h1>
+        <form id="todo-form" class="todo-form" autocomplete="off">
+          <label class="todo-form__label" for="todo-input">Add a new task</label>
+          <div class="todo-form__controls">
+            <input
+              id="todo-input"
+              class="todo-form__input"
+              type="text"
+              name="task"
+              placeholder="e.g. Buy groceries"
+              required
+            />
+            <button class="todo-form__submit" type="submit">Add</button>
+          </div>
+        </form>
+      </header>
 
-+<!DOCTYPE html>
-+<html lang="en">
-+  <head>
-+    <meta charset="utf-8" />
-+    <meta name="viewport" content="width=device-width, initial-scale=1" />
-+    <title>Simple Todo App</title>
-+    <link rel="stylesheet" href="style.css" />
-+  </head>
-+  <body>
-+    <main class="app">
-+      <header class="app__header">
-+        <h1>Todo List</h1>
-+        <form id="todo-form" class="todo-form" autocomplete="off">
-+          <label class="todo-form__label" for="todo-input">Add a new task</label>
-+          <div class="todo-form__controls">
-+            <input
-+              id="todo-input"
-+              class="todo-form__input"
-+              type="text"
-+              name="task"
-+              placeholder="e.g. Buy groceries"
-+              required
-+            />
-+            <button class="todo-form__submit" type="submit">Add</button>
-+          </div>
-+        </form>
-+      </header>
-+
-+      <section class="todo-list">
-+        <header class="todo-list__header">
-+          <h2 class="todo-list__title">Tasks</h2>
-+          <div class="todo-list__filters">
-+            <button class="filter-button" data-filter="all" aria-pressed="true">All</button>
-+            <button class="filter-button" data-filter="active" aria-pressed="false">Active</button>
-+            <button class="filter-button" data-filter="completed" aria-pressed="false">Completed</button>
-+          </div>
-+        </header>
-+        <ul id="todo-items" class="todo-items" aria-live="polite"></ul>
-+        <footer class="todo-list__footer">
-+          <p id="todo-count" class="todo-count">0 tasks</p>
-+          <button id="clear-completed" class="clear-completed" type="button">
-+            Clear completed
-+          </button>
-+        </footer>
-+      </section>
-+    </main>
-+
-+    <template id="todo-item-template">
-+      <li class="todo-item">
-+        <label class="todo-item__label">
-+          <input class="todo-item__checkbox" type="checkbox" />
-+          <span class="todo-item__text"></span>
-+        </label>
-+        <button class="todo-item__delete" type="button" aria-label="Delete task">×</button>
-+      </li>
-+    </template>
-+
-+    <script src="script.js"></script>
-+  </body>
-+</html>
+      <section class="todo-list">
+        <header class="todo-list__header">
+          <h2 class="todo-list__title">Tasks</h2>
+          <div class="todo-list__filters">
+            <button class="filter-button" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter-button" data-filter="active" aria-pressed="false">Active</button>
+            <button class="filter-button" data-filter="completed" aria-pressed="false">Completed</button>
+          </div>
+        </header>
+        <ul id="todo-items" class="todo-items" aria-live="polite"></ul>
+        <footer class="todo-list__footer">
+          <p id="todo-count" class="todo-count">0 tasks</p>
+          <button id="clear-completed" class="clear-completed" type="button">
+            Clear completed
+          </button>
+        </footer>
+      </section>
+    </main>
+
+    <template id="todo-item-template">
+      <li class="todo-item">
+        <label class="todo-item__label">
+          <input class="todo-item__checkbox" type="checkbox" />
+          <span class="todo-item__text"></span>
+        </label>
+        <button class="todo-item__delete" type="button" aria-label="Delete task">×</button>
+      </li>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
