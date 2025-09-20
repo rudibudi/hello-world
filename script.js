@@ -14,9 +14,17 @@ const milestoneSoundIds = [
   "milestone-celebration",
 ];
 
+const milestoneMixSoundId = "milestone-mix";
+const milestonePreferenceIds = [...milestoneSoundIds, milestoneMixSoundId];
+
 const DEFAULT_AUDIO_PREFERENCES = {
   completionSound: completionSoundIds[0],
-  milestoneSound: milestoneSoundIds[0],
+  milestoneSound: milestoneMixSoundId,
+};
+
+const DEFAULT_COMPLETION_STATS = {
+  totalCompleted: 0,
+  milestoneIndex: 0,
 };
 
 function generateId() {
@@ -37,10 +45,16 @@ const milestoneSoundSelect = document.getElementById("milestone-sound");
 
 let tasks = loadTasks();
 let activeFilter = "all";
-let totalCompletedTasks = loadCompletionCount();
+let completionStats = loadCompletionStats();
 let audioPreferences = loadAudioPreferences();
 
-const soundEffects = createSoundEffects(() => audioPreferences);
+const soundEffects = createSoundEffects(() => audioPreferences, {
+  initialMilestoneIndex: completionStats.milestoneIndex,
+  onMilestoneIndexChange(newIndex) {
+    completionStats.milestoneIndex = newIndex;
+    saveCompletionStats();
+  },
+});
 
 initializeAudioPreferenceControls();
 render();
@@ -126,7 +140,7 @@ function normalizeAudioPreferences(preferences = {}) {
       ? preferences.completionSound
       : DEFAULT_AUDIO_PREFERENCES.completionSound;
   const milestoneSound =
-    preferences && milestoneSoundIds.includes(preferences.milestoneSound)
+    preferences && milestonePreferenceIds.includes(preferences.milestoneSound)
       ? preferences.milestoneSound
       : DEFAULT_AUDIO_PREFERENCES.milestoneSound;
   return { completionSound, milestoneSound };
@@ -163,7 +177,7 @@ function updateAudioPreference(key, value) {
     key === "completionSound"
       ? completionSoundIds
       : key === "milestoneSound"
-      ? milestoneSoundIds
+      ? milestonePreferenceIds
       : [];
 
   if (!validIds.includes(value)) {
@@ -187,7 +201,7 @@ function initializeAudioPreferenceControls() {
         completionSoundSelect.value = audioPreferences.completionSound;
         return;
       }
-      soundEffects.playSoundById(selected);
+      soundEffects.playSoundById(selected, { preview: true });
     });
   }
 
@@ -199,7 +213,7 @@ function initializeAudioPreferenceControls() {
         milestoneSoundSelect.value = audioPreferences.milestoneSound;
         return;
       }
-      soundEffects.playSoundById(selected);
+      soundEffects.playSoundById(selected, { preview: true });
     });
   }
 }
@@ -284,51 +298,98 @@ function render() {
   clearCompletedButton.classList.toggle("clear-completed--hidden", !hasCompleted);
 }
 
-function loadCompletionCount() {
+function normalizeTotalCompleted(value) {
+  if (!Number.isFinite(value)) {
+    return DEFAULT_COMPLETION_STATS.totalCompleted;
+  }
+  return Math.max(DEFAULT_COMPLETION_STATS.totalCompleted, Math.floor(value));
+}
+
+function normalizeMilestoneIndex(index) {
+  if (!milestoneSoundIds.length) {
+    return DEFAULT_COMPLETION_STATS.milestoneIndex;
+  }
+  const rawIndex = Number.isFinite(index) ? Math.floor(index) : 0;
+  return ((rawIndex % milestoneSoundIds.length) + milestoneSoundIds.length) %
+    milestoneSoundIds.length;
+}
+
+function loadCompletionStats() {
   try {
     const raw = localStorage.getItem(completionStorageKey);
-    if (!raw) return 0;
+    if (!raw) {
+      return { ...DEFAULT_COMPLETION_STATS };
+    }
     const parsed = JSON.parse(raw);
     if (typeof parsed === "number") {
-      return parsed;
+      return {
+        ...DEFAULT_COMPLETION_STATS,
+        totalCompleted: normalizeTotalCompleted(parsed),
+      };
     }
-    if (parsed && typeof parsed.totalCompleted === "number") {
-      return parsed.totalCompleted;
-    }
-    return 0;
+    const totalCompleted = normalizeTotalCompleted(parsed?.totalCompleted);
+    const milestoneIndex = normalizeMilestoneIndex(parsed?.milestoneIndex);
+    return { totalCompleted, milestoneIndex };
   } catch (error) {
     console.error("Failed to load completion stats", error);
-    return 0;
+    return { ...DEFAULT_COMPLETION_STATS };
   }
 }
 
-function saveCompletionCount() {
-  localStorage.setItem(
-    completionStorageKey,
-    JSON.stringify({ totalCompleted: totalCompletedTasks })
-  );
+function saveCompletionStats() {
+  try {
+    localStorage.setItem(
+      completionStorageKey,
+      JSON.stringify({
+        totalCompleted: normalizeTotalCompleted(completionStats.totalCompleted),
+        milestoneIndex: normalizeMilestoneIndex(completionStats.milestoneIndex),
+      })
+    );
+  } catch (error) {
+    console.error("Failed to save completion stats", error);
+  }
 }
 
 function handleTaskCompleted() {
-  totalCompletedTasks += 1;
-  saveCompletionCount();
+  completionStats.totalCompleted += 1;
+  saveCompletionStats();
   soundEffects.playCompletionSound();
-  if (totalCompletedTasks > 0 && totalCompletedTasks % 5 === 0) {
+  if (
+    completionStats.totalCompleted > 0 &&
+    completionStats.totalCompleted % 5 === 0
+  ) {
     setTimeout(() => {
       soundEffects.playMilestoneSound();
     }, 180);
   }
 }
 
-function createSoundEffects(getPreferences) {
+function createSoundEffects(getPreferences, options = {}) {
   const resolvePreferences =
     typeof getPreferences === "function" ? getPreferences : () => DEFAULT_AUDIO_PREFERENCES;
+  const { initialMilestoneIndex = DEFAULT_COMPLETION_STATS.milestoneIndex, onMilestoneIndexChange } =
+    typeof options === "object" && options !== null ? options : {};
+
+  let milestoneIndex = normalizeMilestoneIndex(initialMilestoneIndex);
+  const fallbackMilestoneSoundId =
+    DEFAULT_AUDIO_PREFERENCES.milestoneSound === milestoneMixSoundId
+      ? milestoneSoundIds[0] ?? null
+      : DEFAULT_AUDIO_PREFERENCES.milestoneSound;
+
+  function advanceMilestoneIndex() {
+    milestoneIndex = normalizeMilestoneIndex(milestoneIndex + 1);
+    if (typeof onMilestoneIndexChange === "function") {
+      onMilestoneIndexChange(milestoneIndex);
+    }
+  }
 
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (typeof AudioContextClass !== "function") {
     return {
       playCompletionSound() {},
-      playMilestoneSound() {},
+      playMilestoneSound() {
+        return false;
+      },
       playAddSound() {},
       playSoundById() {
         return false;
@@ -448,16 +509,44 @@ function createSoundEffects(getPreferences) {
         playSound(DEFAULT_AUDIO_PREFERENCES.completionSound);
       }
     },
-    playMilestoneSound() {
+    playMilestoneSound(request = {}) {
+      const options =
+        request && typeof request === "object" ? request : { preview: false };
+      const preview = Boolean(options.preview);
       const { milestoneSound } = getNormalizedPreferences();
-      if (!playSound(milestoneSound)) {
-        playSound(DEFAULT_AUDIO_PREFERENCES.milestoneSound);
+      if (milestoneSound === milestoneMixSoundId) {
+        if (!milestoneSoundIds.length) {
+          return false;
+        }
+        const soundId =
+          milestoneSoundIds[milestoneIndex % milestoneSoundIds.length];
+        const success = playSound(soundId);
+        if (success && !preview) {
+          advanceMilestoneIndex();
+        }
+        return success;
       }
+      const success = playSound(milestoneSound);
+      if (success) {
+        return true;
+      }
+      if (!fallbackMilestoneSoundId) {
+        return false;
+      }
+      return playSound(fallbackMilestoneSoundId);
     },
     playAddSound() {
       playSound("task-add-soft");
     },
-    playSoundById(soundId) {
+    playSoundById(soundId, request = {}) {
+      if (soundId === milestoneMixSoundId) {
+        const options =
+          request && typeof request === "object" ? request : { preview: true };
+        if (!Object.prototype.hasOwnProperty.call(options, "preview")) {
+          options.preview = true;
+        }
+        return this.playMilestoneSound(options);
+      }
       return playSound(soundId);
     },
   };
