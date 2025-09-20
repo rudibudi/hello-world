@@ -1,6 +1,6 @@
 # Simple Todo App
 
-A lightweight client-side todo list built with plain HTML, CSS, and JavaScript. Tasks are stored in your browser's `localStorage`, so they remain available between visits on the same device.
+A lightweight client-side todo list built with plain HTML, CSS, and JavaScript. Tasks are stored using the browser's `localStorage`, so they remain available between visits on the same device.
 
 ## Features
 
