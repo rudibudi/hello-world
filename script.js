@@ -1,4 +1,5 @@
 const storageKey = "todo-app-tasks";
+const completionStorageKey = "todo-app-completion-stats";
 
 function generateId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -16,6 +17,9 @@ const itemTemplate = document.getElementById("todo-item-template");
 
 let tasks = loadTasks();
 let activeFilter = "all";
+let totalCompletedTasks = loadCompletionCount();
+
+const soundEffects = createSoundEffects();
 
 render();
 
@@ -94,6 +98,9 @@ function saveTasks() {
 }
 
 function toggleTaskCompletion(id, completed) {
+  const existingTask = tasks.find((task) => task.id === id);
+  const wasCompleted = existingTask ? existingTask.completed : false;
+
   tasks = tasks.map((task) =>
     task.id === id
       ? {
@@ -102,6 +109,10 @@ function toggleTaskCompletion(id, completed) {
         }
       : task
   );
+
+  if (!wasCompleted && completed) {
+    handleTaskCompleted();
+  }
   saveTasks();
   render();
 }
@@ -164,4 +175,112 @@ function render() {
   const hasCompleted = tasks.some((task) => task.completed);
   clearCompletedButton.disabled = !hasCompleted;
   clearCompletedButton.classList.toggle("clear-completed--hidden", !hasCompleted);
+}
+
+function loadCompletionCount() {
+  try {
+    const raw = localStorage.getItem(completionStorageKey);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "number") {
+      return parsed;
+    }
+    if (parsed && typeof parsed.totalCompleted === "number") {
+      return parsed.totalCompleted;
+    }
+    return 0;
+  } catch (error) {
+    console.error("Failed to load completion stats", error);
+    return 0;
+  }
+}
+
+function saveCompletionCount() {
+  localStorage.setItem(
+    completionStorageKey,
+    JSON.stringify({ totalCompleted: totalCompletedTasks })
+  );
+}
+
+function handleTaskCompleted() {
+  totalCompletedTasks += 1;
+  saveCompletionCount();
+  soundEffects.playCompletionSound();
+  if (totalCompletedTasks > 0 && totalCompletedTasks % 5 === 0) {
+    setTimeout(() => {
+      soundEffects.playMilestoneSound();
+    }, 180);
+  }
+}
+
+function createSoundEffects() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (typeof AudioContextClass !== "function") {
+    return {
+      playCompletionSound() {},
+      playMilestoneSound() {},
+    };
+  }
+
+  const context = new AudioContextClass();
+  const masterGain = context.createGain();
+  masterGain.gain.value = 0.25;
+  masterGain.connect(context.destination);
+
+  function ensureContext() {
+    if (context.state === "suspended") {
+      return context.resume().catch(() => {});
+    }
+    return Promise.resolve();
+  }
+
+  function playNotes(notes) {
+    if (!Array.isArray(notes) || !notes.length) return;
+    ensureContext().then(() => {
+      let startTime = context.currentTime + 0.05;
+      notes.forEach((note) => {
+        const { frequency, duration, type, volume } = {
+          frequency: 440,
+          duration: 0.2,
+          type: "sine",
+          volume: 1,
+          ...note,
+        };
+        const oscillator = context.createOscillator();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+
+        const gainNode = context.createGain();
+        const effectiveVolume = Math.max(0, Math.min(volume, 1));
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(effectiveVolume, startTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(masterGain);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration + 0.05);
+
+        startTime += duration * 0.85;
+      });
+    });
+  }
+
+  return {
+    playCompletionSound() {
+      playNotes([
+        { frequency: 660, duration: 0.18, type: "sine", volume: 0.8 },
+        { frequency: 880, duration: 0.22, type: "triangle", volume: 0.7 },
+      ]);
+    },
+    playMilestoneSound() {
+      playNotes([
+        { frequency: 523.25, duration: 0.2, type: "square", volume: 0.8 },
+        { frequency: 659.25, duration: 0.2, type: "square", volume: 0.85 },
+        { frequency: 783.99, duration: 0.26, type: "square", volume: 0.9 },
+        { frequency: 1046.5, duration: 0.35, type: "triangle", volume: 1 },
+      ]);
+    },
+  };
 }
