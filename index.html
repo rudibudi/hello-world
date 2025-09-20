@@ -24,6 +24,25 @@
             <button class="todo-form__submit" type="submit">Add</button>
           </div>
         </form>
+        <section class="audio-settings" aria-label="Sound preferences">
+          <h2 class="audio-settings__title">Sound preferences</h2>
+          <div class="audio-settings__control">
+            <label class="audio-settings__label" for="completion-sound">Completed task</label>
+            <select class="audio-settings__select" id="completion-sound" name="completion-sound">
+              <option value="completion-bright">Bright chime</option>
+              <option value="completion-soft">Gentle bell</option>
+              <option value="completion-retro">Retro ping</option>
+            </select>
+          </div>
+          <div class="audio-settings__control">
+            <label class="audio-settings__label" for="milestone-sound">Milestone cheer</label>
+            <select class="audio-settings__select" id="milestone-sound" name="milestone-sound">
+              <option value="milestone-fanfare">Triumphant fanfare</option>
+              <option value="milestone-rise">Sparkle rise</option>
+              <option value="milestone-celebration">Sunshine celebration</option>
+            </select>
+          </div>
+        </section>
       </header>
 
       <section class="todo-list">
