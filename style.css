@@ -199,6 +199,63 @@ body {
   pointer-events: none;
 }
 
+.sound-settings {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: grid;
+  gap: 16px;
+}
+
+.sound-settings__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #312e81;
+}
+
+.sound-settings__controls {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .sound-settings__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sound-settings__field {
+  display: grid;
+  gap: 8px;
+}
+
+.sound-settings__label {
+  font-weight: 600;
+  color: rgba(26, 26, 26, 0.75);
+}
+
+.sound-settings__select {
+  appearance: none;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sound-settings__select:focus {
+  border-color: #5b21b6;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.2);
+  outline: none;
+}
+
+.sound-settings__hint {
+  font-size: 0.85rem;
+  color: rgba(26, 26, 26, 0.6);
+}
+
 @media (max-width: 480px) {
   .app {
     padding: 24px 20px;

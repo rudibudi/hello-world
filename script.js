@@ -1,5 +1,75 @@
 const storageKey = "todo-app-tasks";
 const completionStorageKey = "todo-app-completion-stats";
+const soundPreferenceStorageKey = "todo-app-sound-preferences";
+
+const defaultSoundPreferences = {
+  completion: "chime",
+  milestone: "celebration",
+};
+
+const soundPresets = {
+  completion: {
+    chime: {
+      label: "Bright chime",
+      notes: [
+        { frequency: 660, duration: 0.18, type: "sine", volume: 0.8 },
+        { frequency: 880, duration: 0.22, type: "triangle", volume: 0.7 },
+      ],
+    },
+    sparkle: {
+      label: "Sparkle trail",
+      notes: [
+        { frequency: 783.99, duration: 0.12, type: "sine", volume: 0.75 },
+        { frequency: 987.77, duration: 0.14, type: "sine", volume: 0.65 },
+        { frequency: 1318.51, duration: 0.16, type: "triangle", volume: 0.55 },
+      ],
+    },
+    pop: {
+      label: "Soft pop",
+      notes: [
+        { frequency: 392, duration: 0.12, type: "square", volume: 0.75 },
+        { frequency: 523.25, duration: 0.14, type: "sine", volume: 0.65 },
+        { frequency: 659.25, duration: 0.16, type: "triangle", volume: 0.6 },
+      ],
+    },
+    mute: {
+      label: "Mute",
+      notes: [],
+    },
+  },
+  milestone: {
+    celebration: {
+      label: "Celebration fanfare",
+      notes: [
+        { frequency: 523.25, duration: 0.2, type: "square", volume: 0.8 },
+        { frequency: 659.25, duration: 0.2, type: "square", volume: 0.85 },
+        { frequency: 783.99, duration: 0.26, type: "square", volume: 0.9 },
+        { frequency: 1046.5, duration: 0.35, type: "triangle", volume: 1 },
+      ],
+    },
+    ascent: {
+      label: "Ascending bells",
+      notes: [
+        { frequency: 392, duration: 0.18, type: "sine", volume: 0.65 },
+        { frequency: 523.25, duration: 0.18, type: "sine", volume: 0.7 },
+        { frequency: 659.25, duration: 0.2, type: "triangle", volume: 0.75 },
+        { frequency: 880, duration: 0.24, type: "triangle", volume: 0.8 },
+      ],
+    },
+    mellow: {
+      label: "Mellow chords",
+      notes: [
+        { frequency: 329.63, duration: 0.32, type: "sine", volume: 0.7 },
+        { frequency: 415.3, duration: 0.34, type: "sine", volume: 0.65 },
+        { frequency: 493.88, duration: 0.36, type: "triangle", volume: 0.6 },
+      ],
+    },
+    mute: {
+      label: "Mute",
+      notes: [],
+    },
+  },
+};
 
 function generateId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -14,12 +84,17 @@ const count = document.getElementById("todo-count");
 const clearCompletedButton = document.getElementById("clear-completed");
 const filterButtons = Array.from(document.querySelectorAll(".filter-button"));
 const itemTemplate = document.getElementById("todo-item-template");
+const completionSoundSelect = document.getElementById("completion-sound");
+const milestoneSoundSelect = document.getElementById("milestone-sound");
 
 let tasks = loadTasks();
 let activeFilter = "all";
 let totalCompletedTasks = loadCompletionCount();
 
-const soundEffects = createSoundEffects();
+let soundPreferences = loadSoundPreferences();
+const soundEffects = createSoundEffects(soundPreferences);
+
+setupSoundControls();
 
 render();
 
@@ -202,6 +277,101 @@ function saveCompletionCount() {
   );
 }
 
+function loadSoundPreferences() {
+  try {
+    const raw = localStorage.getItem(soundPreferenceStorageKey);
+    if (!raw) {
+      return { ...defaultSoundPreferences };
+    }
+    const parsed = JSON.parse(raw);
+    return sanitizeSoundPreferences(parsed);
+  } catch (error) {
+    console.error("Failed to load sound preferences", error);
+    return { ...defaultSoundPreferences };
+  }
+}
+
+function saveSoundPreferences(preferences) {
+  try {
+    localStorage.setItem(
+      soundPreferenceStorageKey,
+      JSON.stringify(sanitizeSoundPreferences(preferences))
+    );
+  } catch (error) {
+    console.error("Failed to save sound preferences", error);
+  }
+}
+
+function sanitizeSoundPreferences(preferences = {}) {
+  const completionPreference =
+    preferences && typeof preferences === "object"
+      ? preferences.completion
+      : undefined;
+  const milestonePreference =
+    preferences && typeof preferences === "object"
+      ? preferences.milestone
+      : undefined;
+
+  return {
+    completion: getValidSoundPreset("completion", completionPreference),
+    milestone: getValidSoundPreset("milestone", milestonePreference),
+  };
+}
+
+function isValidSoundPreset(type, value) {
+  return Boolean(value && soundPresets[type] && soundPresets[type][value]);
+}
+
+function getValidSoundPreset(type, value) {
+  if (isValidSoundPreset(type, value)) {
+    return value;
+  }
+  return defaultSoundPreferences[type];
+}
+
+function setupSoundControls() {
+  const mappings = [
+    { select: completionSoundSelect, type: "completion" },
+    { select: milestoneSoundSelect, type: "milestone" },
+  ];
+
+  mappings.forEach(({ select, type }) => {
+    if (!select || !soundPresets[type]) return;
+
+    select.innerHTML = "";
+    Object.entries(soundPresets[type]).forEach(([value, preset]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = preset.label;
+      select.append(option);
+    });
+
+    const preferredValue = soundPreferences[type] || defaultSoundPreferences[type];
+    select.value = preferredValue;
+
+    select.addEventListener("change", (event) => {
+      const requestedValue = event.target.value;
+      const validatedValue = getValidSoundPreset(type, requestedValue);
+      if (validatedValue !== requestedValue) {
+        select.value = validatedValue;
+      }
+
+      soundPreferences = sanitizeSoundPreferences({
+        ...soundPreferences,
+        [type]: validatedValue,
+      });
+      saveSoundPreferences(soundPreferences);
+      soundEffects.updatePreference(type, soundPreferences[type]);
+
+      if (type === "completion") {
+        soundEffects.playCompletionSound();
+      } else if (type === "milestone") {
+        soundEffects.playMilestoneSound();
+      }
+    });
+  });
+}
+
 function handleTaskCompleted() {
   totalCompletedTasks += 1;
   saveCompletionCount();
@@ -213,12 +383,24 @@ function handleTaskCompleted() {
   }
 }
 
-function createSoundEffects() {
+function createSoundEffects(initialPreferences = defaultSoundPreferences) {
+  let currentPreferences = sanitizeSoundPreferences(initialPreferences);
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (typeof AudioContextClass !== "function") {
     return {
       playCompletionSound() {},
       playMilestoneSound() {},
+      updatePreference(type, value) {
+        if (isValidSoundPreset(type, value)) {
+          currentPreferences = {
+            ...currentPreferences,
+            [type]: value,
+          };
+        }
+      },
+      getPreferences() {
+        return { ...currentPreferences };
+      },
     };
   }
 
@@ -267,20 +449,30 @@ function createSoundEffects() {
     });
   }
 
+  function playPreset(type) {
+    if (!soundPresets[type]) return;
+    const preset = soundPresets[type][currentPreferences[type]];
+    if (!preset || !Array.isArray(preset.notes)) return;
+    playNotes(preset.notes);
+  }
+
   return {
     playCompletionSound() {
-      playNotes([
-        { frequency: 660, duration: 0.18, type: "sine", volume: 0.8 },
-        { frequency: 880, duration: 0.22, type: "triangle", volume: 0.7 },
-      ]);
+      playPreset("completion");
     },
     playMilestoneSound() {
-      playNotes([
-        { frequency: 523.25, duration: 0.2, type: "square", volume: 0.8 },
-        { frequency: 659.25, duration: 0.2, type: "square", volume: 0.85 },
-        { frequency: 783.99, duration: 0.26, type: "square", volume: 0.9 },
-        { frequency: 1046.5, duration: 0.35, type: "triangle", volume: 1 },
-      ]);
+      playPreset("milestone");
+    },
+    updatePreference(type, value) {
+      if (isValidSoundPreset(type, value)) {
+        currentPreferences = {
+          ...currentPreferences,
+          [type]: value,
+        };
+      }
+    },
+    getPreferences() {
+      return { ...currentPreferences };
     },
   };
 }
