@@ -43,6 +43,21 @@
           </button>
         </footer>
       </section>
+
+      <section class="sound-settings" aria-labelledby="sound-settings-title">
+        <h2 id="sound-settings-title" class="sound-settings__title">Sound preferences</h2>
+        <div class="sound-settings__controls">
+          <label class="sound-settings__field" for="completion-sound">
+            <span class="sound-settings__label">Completed task sound</span>
+            <select id="completion-sound" class="sound-settings__select"></select>
+          </label>
+          <label class="sound-settings__field" for="milestone-sound">
+            <span class="sound-settings__label">5 tasks milestone sound</span>
+            <select id="milestone-sound" class="sound-settings__select"></select>
+          </label>
+        </div>
+        <p class="sound-settings__hint">Sounds play when you finish tasks. Choose “Mute” to disable.</p>
+      </section>
     </main>
 
     <template id="todo-item-template">
