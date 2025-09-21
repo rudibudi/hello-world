@@ -1,11 +1,14 @@
 const storageKey = "todo-app-tasks";
 const completionStorageKey = "todo-app-completion-stats";
 const soundPreferenceStorageKey = "todo-app-sound-preferences";
+const themePreferenceStorageKey = "todo-app-theme-preference";
 
 const defaultSoundPreferences = {
   completion: "chime",
   milestone: "celebration",
 };
+
+const defaultThemeKey = "lavender";
 
 const soundPresets = {
   completion: {
@@ -71,6 +74,104 @@ const soundPresets = {
   },
 };
 
+const themePresets = {
+  lavender: {
+    label: "Lavender dusk",
+    description: "Dreamy purples with a rosy skyline.",
+    properties: {
+      "background-gradient": "radial-gradient(circle at top, #8ec5fc, #e0c3fc)",
+      "surface-color": "rgba(255, 255, 255, 0.85)",
+      "surface-border": "rgba(0, 0, 0, 0.08)",
+      "surface-border-soft": "rgba(0, 0, 0, 0.05)",
+      "surface-shadow": "rgba(0, 0, 0, 0.15)",
+      "surface-elevated": "rgba(255, 255, 255, 0.85)",
+      "surface-elevated-shadow": "rgba(0, 0, 0, 0.08)",
+      "text-color": "#1a1a1a",
+      "muted-text-color": "rgba(26, 26, 26, 0.6)",
+      "heading-color": "#312e81",
+      "accent-gradient": "linear-gradient(135deg, #6366f1, #8b5cf6)",
+      "accent-color": "#6366f1",
+      "accent-color-strong": "#8b5cf6",
+      "accent-contrast-text": "#ffffff",
+      "accent-pill-background": "rgba(99, 102, 241, 0.1)",
+      "accent-pill-text": "#4338ca",
+      "accent-focus-border": "#5b21b6",
+      "accent-focus-ring": "rgba(91, 33, 182, 0.2)",
+      "accent-shadow": "rgba(99, 102, 241, 0.3)",
+      "dialog-backdrop": "rgba(17, 24, 39, 0.35)",
+      "button-surface": "rgba(255, 255, 255, 0.7)",
+    },
+    preview: {
+      gradient: "linear-gradient(135deg, #8ec5fc, #e0c3fc)",
+      accent: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+    },
+  },
+  aurora: {
+    label: "Aurora breeze",
+    description: "Fresh teals and sunshine accents.",
+    properties: {
+      "background-gradient": "radial-gradient(circle at top, #a1ffce, #faffd1)",
+      "surface-color": "rgba(255, 255, 255, 0.82)",
+      "surface-border": "rgba(13, 148, 136, 0.18)",
+      "surface-border-soft": "rgba(13, 148, 136, 0.1)",
+      "surface-shadow": "rgba(15, 118, 110, 0.18)",
+      "surface-elevated": "rgba(255, 255, 255, 0.9)",
+      "surface-elevated-shadow": "rgba(15, 118, 110, 0.12)",
+      "text-color": "#064e3b",
+      "muted-text-color": "rgba(6, 78, 59, 0.65)",
+      "heading-color": "#047857",
+      "accent-gradient": "linear-gradient(135deg, #1fb6ff, #39f3bb)",
+      "accent-color": "#0ea5e9",
+      "accent-color-strong": "#14b8a6",
+      "accent-contrast-text": "#f0fdfa",
+      "accent-pill-background": "rgba(20, 184, 166, 0.16)",
+      "accent-pill-text": "#0f766e",
+      "accent-focus-border": "#0d9488",
+      "accent-focus-ring": "rgba(13, 148, 136, 0.28)",
+      "accent-shadow": "rgba(14, 165, 233, 0.28)",
+      "dialog-backdrop": "rgba(14, 116, 144, 0.35)",
+      "button-surface": "rgba(255, 255, 255, 0.78)",
+    },
+    preview: {
+      gradient: "linear-gradient(135deg, #a1ffce, #faffd1)",
+      accent: "linear-gradient(135deg, #1fb6ff, #39f3bb)",
+    },
+  },
+  midnight: {
+    label: "Midnight neon",
+    description: "Moody blues with electric highlights.",
+    properties: {
+      "background-gradient": "radial-gradient(circle at top, #1a2a6c, #0f172a 55%, #000428 90%)",
+      "surface-color": "rgba(15, 23, 42, 0.92)",
+      "surface-border": "rgba(148, 163, 184, 0.18)",
+      "surface-border-soft": "rgba(148, 163, 184, 0.12)",
+      "surface-shadow": "rgba(2, 6, 23, 0.65)",
+      "surface-elevated": "rgba(17, 24, 39, 0.95)",
+      "surface-elevated-shadow": "rgba(15, 23, 42, 0.5)",
+      "text-color": "#f1f5f9",
+      "muted-text-color": "rgba(226, 232, 240, 0.72)",
+      "heading-color": "#c7d2fe",
+      "accent-gradient": "linear-gradient(135deg, #6366f1, #22d3ee)",
+      "accent-color": "#818cf8",
+      "accent-color-strong": "#22d3ee",
+      "accent-contrast-text": "#ffffff",
+      "accent-pill-background": "rgba(99, 102, 241, 0.25)",
+      "accent-pill-text": "#c7d2fe",
+      "accent-focus-border": "#22d3ee",
+      "accent-focus-ring": "rgba(34, 211, 238, 0.35)",
+      "accent-shadow": "rgba(129, 140, 248, 0.35)",
+      "dialog-backdrop": "rgba(15, 23, 42, 0.6)",
+      "button-surface": "rgba(17, 24, 39, 0.75)",
+    },
+    preview: {
+      gradient: "linear-gradient(135deg, #1a2a6c, #111827)",
+      accent: "linear-gradient(135deg, #6366f1, #22d3ee)",
+    },
+  },
+};
+
+let currentTheme = applyTheme(loadThemePreference());
+
 function generateId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -86,6 +187,12 @@ const filterButtons = Array.from(document.querySelectorAll(".filter-button"));
 const itemTemplate = document.getElementById("todo-item-template");
 const completionSoundSelect = document.getElementById("completion-sound");
 const milestoneSoundSelect = document.getElementById("milestone-sound");
+const settingsButton = document.getElementById("open-settings");
+const settingsDialog = document.getElementById("settings-dialog");
+const closeSettingsButton = document.getElementById("close-settings");
+const themeOptionsContainer = document.getElementById("theme-options");
+
+const themeOptionElements = new Map();
 
 let tasks = loadTasks();
 let activeFilter = "all";
@@ -94,6 +201,8 @@ let totalCompletedTasks = loadCompletionCount();
 let soundPreferences = loadSoundPreferences();
 const soundEffects = createSoundEffects(soundPreferences);
 
+setupSettingsDialog();
+setupThemeControls();
 setupSoundControls();
 
 render();
@@ -370,6 +479,229 @@ function setupSoundControls() {
       }
     });
   });
+}
+
+function setupThemeControls() {
+  if (!themeOptionsContainer) {
+    return;
+  }
+
+  themeOptionElements.clear();
+  themeOptionsContainer.innerHTML = "";
+
+  const fragment = document.createDocumentFragment();
+
+  Object.entries(themePresets).forEach(([value, config]) => {
+    const option = document.createElement("label");
+    option.className = "theme-option";
+    if (value === currentTheme) {
+      option.classList.add("theme-option--active");
+    }
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "theme";
+    input.value = value;
+    input.className = "theme-option__radio";
+    input.checked = value === currentTheme;
+
+    const preview = document.createElement("span");
+    preview.className = "theme-option__preview";
+    if (config.preview && typeof config.preview === "object") {
+      if (config.preview.gradient) {
+        preview.style.setProperty("--preview-gradient", config.preview.gradient);
+      }
+      if (config.preview.accent) {
+        preview.style.setProperty("--preview-accent", config.preview.accent);
+      }
+    }
+
+    const text = document.createElement("span");
+    text.className = "theme-option__text";
+
+    const name = document.createElement("span");
+    name.className = "theme-option__name";
+    name.textContent = config.label;
+
+    const description = document.createElement("span");
+    description.className = "theme-option__description";
+    description.textContent = config.description;
+
+    text.append(name, description);
+    option.append(input, preview, text);
+
+    themeOptionElements.set(value, option);
+    fragment.append(option);
+  });
+
+  themeOptionsContainer.append(fragment);
+
+  if (!themeOptionsContainer.dataset.initialized) {
+    themeOptionsContainer.addEventListener("change", handleThemeOptionChange);
+    themeOptionsContainer.dataset.initialized = "true";
+  }
+
+  updateThemeOptionSelection();
+}
+
+function handleThemeOptionChange(event) {
+  const target = event.target;
+  if (!target || !target.matches("input[name='theme']")) {
+    return;
+  }
+  setThemePreference(target.value);
+}
+
+function setThemePreference(themeKey) {
+  const validatedTheme = getValidThemePreset(themeKey);
+  if (validatedTheme === currentTheme) {
+    updateThemeOptionSelection();
+    return;
+  }
+
+  currentTheme = applyTheme(validatedTheme);
+  saveThemePreference(currentTheme);
+  updateThemeOptionSelection();
+}
+
+function updateThemeOptionSelection() {
+  themeOptionElements.forEach((element, value) => {
+    const input = element.querySelector(".theme-option__radio");
+    const isActive = value === currentTheme;
+    element.classList.toggle("theme-option--active", isActive);
+    if (input) {
+      input.checked = isActive;
+    }
+  });
+}
+
+function setupSettingsDialog() {
+  if (!settingsDialog || !settingsButton) {
+    return;
+  }
+
+  settingsButton.addEventListener("click", () => {
+    openSettingsDialog();
+  });
+
+  if (closeSettingsButton) {
+    closeSettingsButton.addEventListener("click", () => {
+      closeSettingsDialog();
+    });
+  }
+
+  settingsDialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeSettingsDialog();
+  });
+
+  settingsDialog.addEventListener("click", (event) => {
+    if (event.target === settingsDialog) {
+      closeSettingsDialog();
+    }
+  });
+
+  settingsDialog.addEventListener("close", () => {
+    setSettingsButtonExpanded(false);
+  });
+}
+
+function openSettingsDialog() {
+  if (!settingsDialog) {
+    return;
+  }
+
+  if (typeof settingsDialog.showModal === "function") {
+    if (!settingsDialog.open) {
+      settingsDialog.showModal();
+    }
+  } else {
+    settingsDialog.setAttribute("open", "open");
+  }
+
+  setSettingsButtonExpanded(true);
+
+  requestAnimationFrame(() => {
+    updateThemeOptionSelection();
+    const firstInteractive = settingsDialog.querySelector(
+      "button, input, select, textarea, [href], [tabindex]:not([tabindex='-1'])"
+    );
+    if (firstInteractive && typeof firstInteractive.focus === "function") {
+      firstInteractive.focus();
+    }
+  });
+}
+
+function closeSettingsDialog() {
+  if (!settingsDialog) {
+    return;
+  }
+
+  if (typeof settingsDialog.close === "function") {
+    if (settingsDialog.open) {
+      settingsDialog.close();
+    }
+  } else {
+    settingsDialog.removeAttribute("open");
+  }
+
+  setSettingsButtonExpanded(false);
+}
+
+function loadThemePreference() {
+  try {
+    const stored = localStorage.getItem(themePreferenceStorageKey);
+    if (!stored) {
+      return defaultThemeKey;
+    }
+    return getValidThemePreset(stored);
+  } catch (error) {
+    console.error("Failed to load theme preference", error);
+    return defaultThemeKey;
+  }
+}
+
+function saveThemePreference(themeKey) {
+  try {
+    localStorage.setItem(themePreferenceStorageKey, getValidThemePreset(themeKey));
+  } catch (error) {
+    console.error("Failed to save theme preference", error);
+  }
+}
+
+function getValidThemePreset(themeKey) {
+  if (themeKey && typeof themeKey === "string" && themePresets[themeKey]) {
+    return themeKey;
+  }
+  return defaultThemeKey;
+}
+
+function applyTheme(themeKey) {
+  const validatedTheme = getValidThemePreset(themeKey);
+  const root = document.documentElement;
+
+  const baseTheme = themePresets[defaultThemeKey];
+  if (baseTheme && baseTheme.properties) {
+    Object.entries(baseTheme.properties).forEach(([variable, value]) => {
+      root.style.setProperty(`--${variable}`, value);
+    });
+  }
+
+  const theme = themePresets[validatedTheme];
+  if (theme && theme.properties) {
+    Object.entries(theme.properties).forEach(([variable, value]) => {
+      root.style.setProperty(`--${variable}`, value);
+    });
+  }
+
+  return validatedTheme;
+}
+
+function setSettingsButtonExpanded(isExpanded) {
+  if (!settingsButton) {
+    return;
+  }
+  settingsButton.setAttribute("aria-expanded", String(Boolean(isExpanded)));
 }
 
 function handleTaskCompleted() {

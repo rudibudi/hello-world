@@ -9,7 +9,20 @@
   <body>
     <main class="app">
       <header class="app__header">
-        <h1>Todo List</h1>
+        <div class="app__topbar">
+          <h1>Todo List</h1>
+          <button
+            id="open-settings"
+            class="settings-button"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="settings-dialog"
+            aria-expanded="false"
+          >
+            <span class="settings-button__icon" aria-hidden="true">⚙️</span>
+            <span class="settings-button__label">Settings</span>
+          </button>
+        </div>
         <form id="todo-form" class="todo-form" autocomplete="off">
           <label class="todo-form__label" for="todo-input">Add a new task</label>
           <div class="todo-form__controls">
@@ -43,22 +56,64 @@
           </button>
         </footer>
       </section>
-
-      <section class="sound-settings" aria-labelledby="sound-settings-title">
-        <h2 id="sound-settings-title" class="sound-settings__title">Sound preferences</h2>
-        <div class="sound-settings__controls">
-          <label class="sound-settings__field" for="completion-sound">
-            <span class="sound-settings__label">Completed task sound</span>
-            <select id="completion-sound" class="sound-settings__select"></select>
-          </label>
-          <label class="sound-settings__field" for="milestone-sound">
-            <span class="sound-settings__label">5 tasks milestone sound</span>
-            <select id="milestone-sound" class="sound-settings__select"></select>
-          </label>
-        </div>
-        <p class="sound-settings__hint">Sounds play when you finish tasks. Choose “Mute” to disable.</p>
-      </section>
     </main>
+
+    <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-dialog-title">
+      <form method="dialog" class="settings-dialog__form">
+        <header class="settings-dialog__header">
+          <h2 id="settings-dialog-title" class="settings-dialog__title">Settings</h2>
+          <button
+            id="close-settings"
+            class="settings-dialog__close"
+            type="button"
+            aria-label="Close settings"
+          >
+            ×
+          </button>
+        </header>
+
+        <section class="settings-section" aria-labelledby="sound-settings-title">
+          <div class="settings-section__header">
+            <h3 id="sound-settings-title" class="settings-section__title">Sound preferences</h3>
+            <p class="settings-section__description">
+              Pick a tune for your completed tasks or milestone celebrations.
+            </p>
+          </div>
+          <div class="settings-grid">
+            <label class="settings-field" for="completion-sound">
+              <span class="settings-field__label">Completed task sound</span>
+              <select id="completion-sound" class="settings-field__control"></select>
+            </label>
+            <label class="settings-field" for="milestone-sound">
+              <span class="settings-field__label">5 tasks milestone sound</span>
+              <select id="milestone-sound" class="settings-field__control"></select>
+            </label>
+          </div>
+          <p class="settings-section__hint">
+            The chosen sound will play instantly so you can preview it. Choose “Mute” to disable.
+          </p>
+        </section>
+
+        <section class="settings-section" aria-labelledby="theme-settings-title">
+          <div class="settings-section__header">
+            <h3 id="theme-settings-title" class="settings-section__title">Appearance</h3>
+            <p class="settings-section__description">
+              Give your task list a fresh vibe by switching the colors.
+            </p>
+          </div>
+          <div
+            id="theme-options"
+            class="theme-options"
+            role="radiogroup"
+            aria-labelledby="theme-settings-title"
+          ></div>
+        </section>
+
+        <footer class="settings-dialog__actions">
+          <button class="settings-dialog__action" value="cancel" type="submit">Close</button>
+        </footer>
+      </form>
+    </dialog>
 
     <template id="todo-item-template">
       <li class="todo-item">
